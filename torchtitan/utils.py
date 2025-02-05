@@ -21,6 +21,7 @@ from torch._utils import _get_available_device_type, _get_device_module
 from torch.distributed.device_mesh import DeviceMesh
 from torch.distributed.tensor import DTensor
 from torchtitan.logging import logger
+from torchtitan.extra_utils import clip_grads_with_norm_, get_total_norm
 
 
 def get_device_info():
@@ -386,7 +387,7 @@ def clip_grad_norm_(
 
     """
     grads = [p.grad for p in parameters if p.grad is not None]
-    total_norm = torch.nn.utils.get_total_norm(
+    total_norm = get_total_norm(
         grads, norm_type, error_if_nonfinite, foreach
     )
 
@@ -409,5 +410,5 @@ def clip_grad_norm_(
             dist.all_reduce(total_norm, op=dist.ReduceOp.SUM, group=pp_mesh.get_group())
             total_norm **= 1.0 / norm_type
 
-    torch.nn.utils.clip_grads_with_norm_(parameters, max_norm, total_norm, foreach)
+    clip_grads_with_norm_(parameters, max_norm, total_norm, foreach)
     return total_norm
